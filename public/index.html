@@ -2,8 +2,14 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <meta name="description" content="每日摸鱼人日历 —— 给打工人的一点体面松弛" />
+    <meta name="theme-color" content="#0c1f24" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>摸鱼人日历</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,7 +27,11 @@
     </div>
 
     <main class="stage">
-      <div class="sheet-loading" id="loading">正在翻开今日日历…</div>
+      <div class="sheet-cover" id="loading" aria-live="polite">
+        <p class="sheet-cover-tag">摸鱼人日历 · DAILY FISH</p>
+        <p class="sheet-cover-title" id="coverTitle">今日宜摸鱼</p>
+        <p class="sheet-cover-sub" id="coverSub">给打工人的一点体面松弛</p>
+      </div>
       <div class="sheet-error" id="error" hidden></div>
 
       <div id="content" hidden>

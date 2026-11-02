@@ -15,6 +15,7 @@ init().catch((err) => showError(err.message || String(err)));
 async function init() {
   index = await loadIndex();
   const latest = await fetchJson("./data/latest.json").catch(() => null);
+  if (latest) fillCover(latest);
   const startDate = latest?.date || index[index.length - 1];
   if (!startDate) {
     throw new Error("还没有日历数据。请先运行 npm run generate:mock 或配置 GitHub Actions。");
@@ -49,7 +50,23 @@ async function showDate(dateStr) {
   }
 }
 
+function fillCover(data) {
+  $("coverTitle").textContent = data.slogan || "今日宜摸鱼";
+  $("coverSub").textContent = coverSubFrom(data);
+}
+
+function coverSubFrom(data) {
+  const bless = String(data.bless || "")
+    .split(/\n/)
+    .map((line) => line.replace(/^寄语[：:]\s*/, "").trim())
+    .find(Boolean);
+  if (bless) return bless;
+  return data.headerLine || "给打工人的一点体面松弛";
+}
+
 function render(data) {
+  fillCover(data);
+
   $("dayNum").textContent = String(data.day ?? data.date?.slice(-2) ?? "").padStart(2, "0");
   $("weekday").textContent = data.weekday || "";
   $("yearMonth").textContent = [data.yearMonth, data.ganzhi].filter(Boolean).join(" · ");
