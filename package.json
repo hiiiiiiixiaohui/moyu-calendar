@@ -1,0 +1,15 @@
+{
+  "name": "moyu-calendar",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "每日摸鱼人日历：GitHub Actions 定时调用大模型生成，静态站部署",
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "generate:mock": "MOCK=1 node scripts/generate.mjs",
+    "serve": "npx --yes serve public -p 4173"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

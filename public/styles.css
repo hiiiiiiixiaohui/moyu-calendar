@@ -1,0 +1,383 @@
+:root {
+  --ink: #0c1f24;
+  --ink-soft: #16333a;
+  --mist: #d7ebe3;
+  --paper: #f3f0e6;
+  --paper-edge: #e4ddd0;
+  --accent: #e8a54b;
+  --accent-deep: #c47a2b;
+  --sea: #1f6f78;
+  --danger: #b54a3c;
+  --ok: #2f7a5b;
+  --font-brand: "ZCOOL KuaiLe", "PingFang SC", sans-serif;
+  --font-body: "Noto Sans SC", "PingFang SC", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--ink);
+  overflow-x: hidden;
+}
+
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 700px at 15% -10%, #24545c 0%, transparent 55%),
+    radial-gradient(900px 600px at 90% 20%, #1a3d45 0%, transparent 50%),
+    linear-gradient(165deg, #08161a 0%, #0f2a30 45%, #0a1c21 100%);
+}
+
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.45;
+  animation: drift 14s ease-in-out infinite alternate;
+}
+
+.glow-a {
+  width: 280px;
+  height: 280px;
+  left: 8%;
+  top: 18%;
+  background: #2d8a78;
+}
+
+.glow-b {
+  width: 360px;
+  height: 360px;
+  right: 5%;
+  bottom: 10%;
+  background: #c47a2b66;
+  animation-delay: -4s;
+}
+
+.rain {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    -18deg,
+    transparent 0,
+    transparent 10px,
+    #ffffff08 10px,
+    #ffffff08 11px
+  );
+  mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 80%, transparent);
+  animation: rain-slide 18s linear infinite;
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+  width: min(720px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: clamp(2rem, 6vh, 4rem) 0 3rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.brand {
+  text-align: left;
+  color: var(--mist);
+  animation: rise 0.9s ease both;
+}
+
+.brand-mark {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  color: var(--accent);
+}
+
+.brand-name {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: clamp(2.8rem, 10vw, 4.4rem);
+  line-height: 1.05;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.brand-tag {
+  margin: 0.6rem 0 0;
+  font-size: 0.95rem;
+  opacity: 0.75;
+}
+
+.sheet {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--paper-edge);
+  padding: clamp(1.4rem, 4vw, 2.2rem);
+  position: relative;
+  animation: rise 1s ease 0.12s both;
+  box-shadow:
+    0 1px 0 #fff8,
+    0 24px 60px #0006;
+}
+
+.sheet::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--sea), var(--accent), var(--sea));
+}
+
+.sheet-loading,
+.sheet-error {
+  font-size: 0.95rem;
+  opacity: 0.7;
+  min-height: 8rem;
+  display: grid;
+  place-items: center;
+}
+
+.sheet-error {
+  color: var(--danger);
+  opacity: 1;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.65rem 1rem;
+  margin-bottom: 1.1rem;
+  font-family: var(--font-mono);
+}
+
+.date {
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.weekday {
+  color: var(--sea);
+  font-size: 0.95rem;
+}
+
+.holiday {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--accent-deep);
+  border-bottom: 1px dashed var(--accent-deep);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.subtitle {
+  margin: 0.55rem 0 0;
+  font-size: 1rem;
+  opacity: 0.78;
+}
+
+.quote {
+  margin: 1.4rem 0 0;
+  padding: 0.9rem 0 0.9rem 1rem;
+  border-left: 3px solid var(--accent);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.meters {
+  margin-top: 1.6rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  border-top: 1px solid #d9d2c4;
+  border-bottom: 1px solid #d9d2c4;
+  padding: 1rem 0;
+}
+
+.meter {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.meter-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  font-family: var(--font-mono);
+}
+
+.meter-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sea);
+}
+
+.lists {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.list h3,
+.tips h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  color: var(--ok);
+}
+
+.list-avoid h3 {
+  color: var(--danger);
+}
+
+.list ul,
+.tips ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.list li,
+.tips li {
+  font-size: 0.95rem;
+  line-height: 1.45;
+  padding-left: 0.9rem;
+  position: relative;
+}
+
+.list li::before,
+.tips li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  color: var(--sea);
+}
+
+.list-avoid li::before {
+  color: var(--danger);
+}
+
+.tips {
+  margin-top: 1.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px dashed #d0c8b8;
+}
+
+.tips h3 {
+  color: var(--accent-deep);
+}
+
+.nav {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  animation: rise 1s ease 0.22s both;
+}
+
+.nav-btn {
+  appearance: none;
+  border: 1px solid #ffffff33;
+  background: #ffffff12;
+  color: var(--mist);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #ffffff22;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.foot {
+  text-align: center;
+  color: #9bb8b3;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  min-height: 1rem;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(24px, -18px) scale(1.08);
+  }
+}
+
+@keyframes rain-slide {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 120px 400px;
+  }
+}
+
+@media (max-width: 560px) {
+  .meters,
+  .lists {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-name {
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow,
+  .rain,
+  .brand,
+  .sheet,
+  .nav {
+    animation: none;
+  }
+}

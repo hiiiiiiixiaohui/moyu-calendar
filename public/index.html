@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="每日摸鱼人日历 —— 给打工人的一点体面松弛" />
+    <title>摸鱼人日历</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true">
+      <div class="glow glow-a"></div>
+      <div class="glow glow-b"></div>
+      <div class="rain"></div>
+    </div>
+
+    <main class="stage">
+      <header class="brand">
+        <p class="brand-mark">MOYU</p>
+        <h1 class="brand-name">摸鱼人日历</h1>
+        <p class="brand-tag">给工位一点合法的松弛感</p>
+      </header>
+
+      <section class="sheet" id="sheet" aria-live="polite">
+        <div class="sheet-loading" id="loading">正在翻开今日日历…</div>
+        <div class="sheet-body" id="content" hidden>
+          <div class="meta">
+            <time class="date" id="date"></time>
+            <span class="weekday" id="weekday"></span>
+            <span class="holiday" id="holiday" hidden></span>
+          </div>
+
+          <h2 class="title" id="title"></h2>
+          <p class="subtitle" id="subtitle"></p>
+          <blockquote class="quote" id="quote"></blockquote>
+
+          <div class="meters">
+            <div class="meter">
+              <span class="meter-label">距周末</span>
+              <span class="meter-value" id="daysToWeekend"></span>
+            </div>
+            <div class="meter">
+              <span class="meter-label">距发薪</span>
+              <span class="meter-value" id="daysToPayday"></span>
+            </div>
+            <div class="meter">
+              <span class="meter-label">心情</span>
+              <span class="meter-value" id="mood"></span>
+            </div>
+          </div>
+
+          <div class="lists">
+            <div class="list">
+              <h3>宜</h3>
+              <ul id="suitable"></ul>
+            </div>
+            <div class="list list-avoid">
+              <h3>忌</h3>
+              <ul id="avoid"></ul>
+            </div>
+          </div>
+
+          <div class="tips">
+            <h3>今日贴士</h3>
+            <ul id="tips"></ul>
+          </div>
+        </div>
+        <div class="sheet-error" id="error" hidden></div>
+      </section>
+
+      <nav class="nav" aria-label="历史日期">
+        <button type="button" class="nav-btn" id="prev" disabled>前一天</button>
+        <button type="button" class="nav-btn" id="today">今天</button>
+        <button type="button" class="nav-btn" id="next" disabled>后一天</button>
+      </nav>
+
+      <footer class="foot">
+        <span id="source"></span>
+      </footer>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
