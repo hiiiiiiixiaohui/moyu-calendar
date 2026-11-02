@@ -9,6 +9,9 @@
     "generate:mock": "MOCK=1 node scripts/generate.mjs",
     "serve": "npx --yes serve public -p 4173"
   },
+  "dependencies": {
+    "lunar-javascript": "^1.7.3"
+  },
   "engines": {
     "node": ">=20"
   }

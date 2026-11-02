@@ -41,6 +41,7 @@ async function showDate(dateStr) {
     render(data);
     currentDate = dateStr;
     updateNav();
+    document.title = `摸鱼人日历 · ${data.date?.replaceAll("-", ".") || dateStr}`;
     loadingEl.hidden = true;
     contentEl.hidden = false;
   } catch (err) {
@@ -49,27 +50,29 @@ async function showDate(dateStr) {
 }
 
 function render(data) {
-  $("date").textContent = data.date;
-  $("date").dateTime = data.date;
+  $("dayNum").textContent = String(data.day ?? data.date?.slice(-2) ?? "").padStart(2, "0");
   $("weekday").textContent = data.weekday || "";
+  $("yearMonth").textContent = [data.yearMonth, data.ganzhi].filter(Boolean).join(" · ");
+  $("headerLine").textContent = data.headerLine || [data.lunar, data.zodiac].filter(Boolean).join(" · ");
+
   const holiday = $("holiday");
   if (data.holiday) {
     holiday.hidden = false;
-    holiday.textContent = data.holiday;
+    holiday.textContent = `今日节日：${data.holiday}`;
   } else {
     holiday.hidden = true;
   }
 
-  $("title").textContent = data.title || "";
-  $("subtitle").textContent = data.subtitle || "";
-  $("quote").textContent = data.quote || "";
-  $("daysToWeekend").textContent = formatDays(data.daysToWeekend);
-  $("daysToPayday").textContent = formatDays(data.daysToPayday);
-  $("mood").textContent = data.mood || "—";
+  $("status").textContent = data.status || "";
+  $("slogan").textContent = data.slogan || "今天你摸鱼了吗？";
+  $("bless").textContent = data.bless || "";
 
   fillList($("suitable"), data.suitable);
   fillList($("avoid"), data.avoid);
-  fillList($("tips"), data.tips);
+  renderFood(data.food);
+  renderMovies(data.movies);
+  renderCountdowns(data.countdowns);
+  renderPaydays(data.paydays, data.paydayMonth);
 
   const src = data.source === "mock" ? "本地样例" : data.model || "llm";
   $("source").textContent = `生成于 ${formatTime(data.generatedAt)} · ${src}`;
@@ -84,10 +87,90 @@ function fillList(ul, items) {
   }
 }
 
-function formatDays(n) {
-  if (n === 0 || n === "0") return "就是今天";
-  if (n == null) return "—";
-  return `${n} 天`;
+function renderFood(food = {}) {
+  const root = $("food");
+  root.replaceChildren();
+  const rows = [
+    ["主食", food.staple],
+    ["小吃", food.snack],
+    ["汤", food.soup],
+    ["点心", food.dessert],
+  ];
+  for (const [k, v] of rows) {
+    const div = document.createElement("div");
+    div.className = "food-item";
+    div.innerHTML = `<div class="food-k"></div><div class="food-v"></div>`;
+    div.querySelector(".food-k").textContent = k;
+    div.querySelector(".food-v").textContent = v || "—";
+    root.appendChild(div);
+  }
+}
+
+function renderMovies(movies = []) {
+  const root = $("movies");
+  root.replaceChildren();
+  for (const m of movies) {
+    const div = document.createElement("div");
+    div.className = "movie";
+    const title = m.year ? `${m.title}` : m.title;
+    const blurb = m.year ? `${m.year} · ${m.blurb || ""}` : m.blurb || "";
+    div.innerHTML = `<div class="movie-n"></div><div class="movie-d"></div>`;
+    div.querySelector(".movie-n").textContent = title;
+    div.querySelector(".movie-d").textContent = blurb;
+    root.appendChild(div);
+  }
+}
+
+function renderCountdowns(items = []) {
+  const root = $("countdowns");
+  root.replaceChildren();
+  for (const item of items) {
+    const div = document.createElement("div");
+    div.className = item.hot ? "cd hot" : "cd";
+    div.innerHTML = `
+      <div class="cd-name"></div>
+      <div class="cd-num"></div>
+      <div class="cd-date"></div>
+    `;
+    div.querySelector(".cd-name").textContent = item.name;
+    const num = div.querySelector(".cd-num");
+    if (item.days === 0) {
+      num.textContent = "今天";
+    } else {
+      num.innerHTML = "";
+      num.appendChild(document.createTextNode(String(item.days)));
+      const span = document.createElement("span");
+      span.textContent = "天";
+      num.appendChild(span);
+    }
+    div.querySelector(".cd-date").textContent = item.date || "";
+    root.appendChild(div);
+  }
+}
+
+function renderPaydays(items = [], month) {
+  $("paydayTitle").textContent = month
+    ? `倒计时 · 薪资篇（本月 ${month} 月）`
+    : "倒计时 · 薪资篇";
+  const root = $("paydays");
+  root.replaceChildren();
+  for (const item of items) {
+    const div = document.createElement("div");
+    div.className = "pay-item";
+    div.innerHTML = `<div class="pay-p"></div><div class="pay-d"></div>`;
+    div.querySelector(".pay-p").textContent = item.label;
+    const d = div.querySelector(".pay-d");
+    if (item.days === 0) {
+      d.textContent = "今天";
+    } else {
+      d.innerHTML = "";
+      d.appendChild(document.createTextNode(String(item.days)));
+      const span = document.createElement("span");
+      span.textContent = " 天";
+      d.appendChild(span);
+    }
+    root.appendChild(div);
+  }
 }
 
 function formatTime(iso) {

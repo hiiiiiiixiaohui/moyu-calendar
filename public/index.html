@@ -21,58 +21,59 @@
     </div>
 
     <main class="stage">
-      <header class="brand">
-        <p class="brand-mark">MOYU</p>
-        <h1 class="brand-name">摸鱼人日历</h1>
-        <p class="brand-tag">给工位一点合法的松弛感</p>
-      </header>
+      <div class="sheet-loading" id="loading">正在翻开今日日历…</div>
+      <div class="sheet-error" id="error" hidden></div>
 
-      <section class="sheet" id="sheet" aria-live="polite">
-        <div class="sheet-loading" id="loading">正在翻开今日日历…</div>
-        <div class="sheet-body" id="content" hidden>
-          <div class="meta">
-            <time class="date" id="date"></time>
-            <span class="weekday" id="weekday"></span>
-            <span class="holiday" id="holiday" hidden></span>
+      <div id="content" hidden>
+        <header class="hero">
+          <p class="hero-tag">摸鱼人日历 · DAILY FISH</p>
+          <div class="hero-day">
+            <span id="dayNum"></span><small id="weekday"></small>
           </div>
+          <p class="hero-ym" id="yearMonth"></p>
+          <p class="hero-lunar" id="headerLine"></p>
+          <p class="hero-holiday" id="holiday" hidden></p>
+        </header>
 
-          <h2 class="title" id="title"></h2>
-          <p class="subtitle" id="subtitle"></p>
-          <blockquote class="quote" id="quote"></blockquote>
+        <section class="block">
+          <h2 class="block-title">今日状态</h2>
+          <p class="status" id="status"></p>
+        </section>
 
-          <div class="meters">
-            <div class="meter">
-              <span class="meter-label">距周末</span>
-              <span class="meter-value" id="daysToWeekend"></span>
-            </div>
-            <div class="meter">
-              <span class="meter-label">距发薪</span>
-              <span class="meter-value" id="daysToPayday"></span>
-            </div>
-            <div class="meter">
-              <span class="meter-label">心情</span>
-              <span class="meter-value" id="mood"></span>
-            </div>
+        <section class="slogan">
+          <p class="slogan-big" id="slogan"></p>
+          <p class="slogan-bless" id="bless"></p>
+        </section>
+
+        <section class="yiji">
+          <div class="yi">
+            <h3>宜</h3>
+            <ul id="suitable"></ul>
           </div>
-
-          <div class="lists">
-            <div class="list">
-              <h3>宜</h3>
-              <ul id="suitable"></ul>
-            </div>
-            <div class="list list-avoid">
-              <h3>忌</h3>
-              <ul id="avoid"></ul>
-            </div>
+          <div class="ji">
+            <h3>忌</h3>
+            <ul id="avoid"></ul>
           </div>
+        </section>
 
-          <div class="tips">
-            <h3>今日贴士</h3>
-            <ul id="tips"></ul>
-          </div>
-        </div>
-        <div class="sheet-error" id="error" hidden></div>
-      </section>
+        <section class="block">
+          <h2 class="block-title">摸鱼生活 · 今天吃什么</h2>
+          <div class="food" id="food"></div>
+
+          <h2 class="block-title block-title-gap">摸鱼片单 · 4 部</h2>
+          <div class="movies" id="movies"></div>
+        </section>
+
+        <section class="block">
+          <h2 class="block-title">倒计时 · 假期篇</h2>
+          <div class="cd-grid" id="countdowns"></div>
+        </section>
+
+        <section class="block">
+          <h2 class="block-title" id="paydayTitle">倒计时 · 薪资篇</h2>
+          <div class="pay" id="paydays"></div>
+        </section>
+      </div>
 
       <nav class="nav" aria-label="历史日期">
         <button type="button" class="nav-btn" id="prev" disabled>前一天</button>
@@ -82,6 +83,8 @@
 
       <footer class="foot">
         <span id="source"></span>
+        <br />
+        摸鱼有度，快乐无价 · 祝你今天顺利活到下班
       </footer>
     </main>
 

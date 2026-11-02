@@ -6,35 +6,18 @@
  */
 
 import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildDayContext } from "./meta.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const DATA_DIR = join(ROOT, "public", "data");
 const TZ = "Asia/Shanghai";
+const require = createRequire(import.meta.url);
 
 await loadDotEnv(join(ROOT, ".env"));
-
-const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-
-const FIXED_HOLIDAYS = {
-  "01-01": "元旦",
-  "02-14": "情人节",
-  "03-08": "妇女节",
-  "03-12": "植树节",
-  "04-01": "愚人节",
-  "05-01": "劳动节",
-  "05-04": "青年节",
-  "06-01": "儿童节",
-  "07-01": "建党节",
-  "08-01": "建军节",
-  "09-10": "教师节",
-  "10-01": "国庆节",
-  "11-11": "双十一",
-  "12-24": "平安夜",
-  "12-25": "圣诞节",
-};
 
 main().catch((err) => {
   console.error(err);
@@ -44,7 +27,8 @@ main().catch((err) => {
 async function main() {
   const now = shanghaiNow();
   const dateStr = process.env.FORCE_DATE?.trim() || formatDate(now);
-  const ctx = buildDayContext(dateStr);
+  const lunarLib = loadLunarLib();
+  const ctx = buildDayContext(dateStr, lunarLib);
 
   console.log(`生成摸鱼日历：${dateStr}（${ctx.weekday}）`);
 
@@ -68,7 +52,6 @@ async function main() {
   await writeFile(dayPath, payload, "utf8");
   await writeFile(latestPath, payload, "utf8");
 
-  // 维护索引，方便前端做历史翻页
   const indexPath = join(DATA_DIR, "index.json");
   let index = [];
   try {
@@ -87,8 +70,16 @@ async function main() {
   console.log(`已写入 ${latestPath}`);
 }
 
+function loadLunarLib() {
+  try {
+    return require("lunar-javascript");
+  } catch {
+    console.warn("未安装 lunar-javascript，农历/干支将留空（npm i lunar-javascript）");
+    return {};
+  }
+}
+
 function shanghaiNow() {
-  // 用格式化拿到上海时区的年月日，再构一个本地 Date（仅用于算 weekday / 月末）
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: TZ,
     year: "numeric",
@@ -106,63 +97,64 @@ function formatDate(d) {
   return `${y}-${m}-${day}`;
 }
 
-function buildDayContext(dateStr) {
-  const d = new Date(`${dateStr}T12:00:00+08:00`);
-  const weekdayIndex = d.getDay();
-  const weekday = WEEKDAYS[weekdayIndex];
-  const isWeekend = weekdayIndex === 0 || weekdayIndex === 6;
-
-  let daysToWeekend;
-  if (weekdayIndex === 0) daysToWeekend = 0;
-  else if (weekdayIndex === 6) daysToWeekend = 0;
-  else daysToWeekend = 6 - weekdayIndex;
-
-  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  const daysToPayday = Math.max(0, lastDay - d.getDate());
-
-  const mmdd = dateStr.slice(5);
-  const holiday = FIXED_HOLIDAYS[mmdd] || null;
-
-  return {
-    date: dateStr,
-    weekday,
-    weekdayIndex,
-    isWeekend,
-    daysToWeekend,
-    daysToPayday,
-    holiday,
-    month: d.getMonth() + 1,
-    day: d.getDate(),
-    year: d.getFullYear(),
-  };
-}
-
 function mockCalendar(ctx) {
   return {
-    date: ctx.date,
-    weekday: ctx.weekday,
-    daysToWeekend: ctx.daysToWeekend,
-    daysToPayday: ctx.daysToPayday,
-    holiday: ctx.holiday,
-    title: ctx.isWeekend ? "合法躺平日" : "今日宜适度摸鱼",
-    subtitle: ctx.holiday
-      ? `${ctx.holiday}快乐，记得体面地摸`
-      : ctx.isWeekend
-        ? "周末不属于工位"
-        : `距离周末还有 ${ctx.daysToWeekend} 天`,
-    quote: ctx.isWeekend
-      ? "休息是为了更好地……继续休息。"
-      : "工作是暂时的，摸鱼是永恒的。",
-    mood: ctx.isWeekend ? "松弛" : "隐忍而快乐",
+    status: ctx.isWeekend
+      ? "周末到了，工位已进入休眠模式。手机静音、群聊免打扰，今天的 KPI 只有呼吸和快乐。"
+      : "周一，是打工人集体「灵魂返厂检修」的日子。咖啡续命、眼神放空、鼠标乱点，键盘敲得震天响，文档里只有三个字：待补充。",
+    slogan: "今天你摸鱼了吗？",
+    bless: ctx.isWeekend
+      ? "寄语：休息不是偷懒的延长线，是下周继续体面摸鱼的燃料。\n今天的目标只有一个——把闹钟设晚一点。"
+      : "寄语：摸鱼不是偷懒，是给大脑留一块不被 KPI 占领的自留地。\n今天的目标只有一个——把「已读」变成「已摸」。",
     suitable: ctx.isWeekend
-      ? ["补觉", "刷剧", "散步", "不回工作消息"]
-      : ["喝水", "站起来走走", "整理桌面", "假装认真看文档"],
+      ? [
+          "宜补觉到自然醒，让生物钟和工位暂时分手",
+          "宜把想看的片单刷掉两部，周末不加班剧情",
+          "宜出门晒太阳，提醒自己不是盆栽",
+        ]
+      : [
+          "宜把会议开成静音模式，摄像头对准天花板",
+          "宜在工位假装沉思，实则研究午饭吃什么",
+          "宜把「收到」打成「收到～」，用波浪号软化灵魂",
+        ],
     avoid: ctx.isWeekend
-      ? ["自愿加班", "打开公司群"]
-      : ["主动揽活", "会中第一个发言", "周五下午提需求"],
-    tips: [
-      "番茄钟之外也可以有「发呆钟」。",
-      "邮件可以稍后再回，水杯应该现在就满。",
+      ? [
+          "忌主动打开公司邮箱，假期侵入会传染",
+          "忌在朋友圈晒加班，会被同事当成内卷先锋",
+          "忌制定过于宏大的周计划，周一你会感谢现在的自己",
+        ]
+      : [
+          "忌在群里第一个回复「我来」，你会被记住一辈子",
+          "忌下午三点后接新需求，此时大脑已下班",
+          "忌把摸鱼记录写进周报，领导会以为你在做副业",
+        ],
+    food: {
+      staple: "番茄牛腩面",
+      snack: "烤红薯",
+      soup: "玉米排骨汤",
+      dessert: "桂花酒酿圆子",
+    },
+    movies: [
+      {
+        title: "《办公空间》",
+        year: 1999,
+        blurb: "把「上班如上坟」拍成喜剧，摸鱼人的祖师爷级精神食粮。",
+      },
+      {
+        title: "《白日梦想家》",
+        year: 2013,
+        blurb: "上班走神走成一场冰岛旅行，看完想立刻请假。",
+      },
+      {
+        title: "《实习生》",
+        year: 2015,
+        blurb: "七十岁实习生入职互联网公司，治愈系职场童话。",
+      },
+      {
+        title: "《穿普拉达的女王》",
+        year: 2006,
+        blurb: "提醒你：再忙也别忘了自己为什么出发（以及别接老板凌晨的电话）。",
+      },
     ],
     generatedAt: new Date().toISOString(),
     source: "mock",
@@ -177,24 +169,37 @@ async function generateWithLlm(ctx) {
   const model = process.env.LLM_MODEL || "gpt-4o-mini";
   const apiKey = process.env.LLM_API_KEY;
 
-  const system = `你是「摸鱼人日历」撰稿人。风格：轻松、机智、温暖的打工人幽默，不阴阳怪气伤人，不涉及时政敏感与歧视。
-只输出一个 JSON 对象，不要 markdown 代码块，不要其它说明。字段必须齐全：
+  const system = `你是「摸鱼人日历」撰稿人。风格对齐经典摸鱼日历：轻松、机智、温暖的打工人幽默，不阴阳怪气伤人，不涉及时政敏感与歧视。
+只输出一个 JSON 对象，不要 markdown 代码块，不要其它说明。字段必须齐全且类型正确：
 {
-  "title": "短标题，8字以内",
-  "subtitle": "一句补充，20字以内",
-  "quote": "一句今日金句",
-  "mood": "今日心情词，2-6字",
-  "suitable": ["宜做的事1","宜做的事2","宜做的事3","宜做的事4"],
-  "avoid": ["忌做的事1","忌做的事2","忌做的事3"],
-  "tips": ["小贴士1","小贴士2"]
-}`;
+  "status": "今日状态，80-120字，像一段工位观察日记",
+  "slogan": "一句口号，10字以内，可沿用「今天你摸鱼了吗？」或自创新句",
+  "bless": "寄语两行，用 \\n 换行，每行一句，带一点安慰和笑点",
+  "suitable": ["宜……（完整一句，15-28字）", "宜……", "宜……"],
+  "avoid": ["忌……（完整一句，15-28字）", "忌……", "忌……"],
+  "food": {
+    "staple": "主食名",
+    "snack": "小吃名",
+    "soup": "汤名",
+    "dessert": "点心名"
+  },
+  "movies": [
+    { "title": "《影片名》", "year": 1999, "blurb": "一句话安利，20-40字" },
+    { "title": "《影片名》", "year": 2013, "blurb": "……" },
+    { "title": "《影片名》", "year": 2015, "blurb": "……" },
+    { "title": "《影片名》", "year": 2006, "blurb": "……" }
+  ]
+}
+要求：suitable/avoid 各 3 条；movies 必须 4 部，偏职场/松弛/喜剧；food 贴合季节与午饭场景。`;
 
   const user = `日期：${ctx.date}（${ctx.weekday}）
 是否周末：${ctx.isWeekend ? "是" : "否"}
-距离周末：${ctx.daysToWeekend} 天
-距离月末发薪日（按月末计）：${ctx.daysToPayday} 天
+页眉信息：${ctx.yearMonth}${ctx.ganzhi ? ` · ${ctx.ganzhi}` : ""}
+${ctx.headerLine || ""}
 固定节日：${ctx.holiday || "无"}
-请据此写一份当日摸鱼人日历文案。`;
+距离周末：${ctx.daysToWeekend} 天（${ctx.weekendDate}）
+下一节气：${ctx.solarTerm ? `${ctx.solarTerm.name}还有 ${ctx.solarTerm.days} 天` : "无"}
+请写一份完整的当日摸鱼人日历文案（状态/口号寄语/宜忌/吃什么/片单）。倒计时与发薪由系统计算，你不必输出。`;
 
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
@@ -231,11 +236,6 @@ async function generateWithLlm(ctx) {
 
   return {
     ...parsed,
-    date: ctx.date,
-    weekday: ctx.weekday,
-    daysToWeekend: ctx.daysToWeekend,
-    daysToPayday: ctx.daysToPayday,
-    holiday: ctx.holiday,
     generatedAt: new Date().toISOString(),
     source: "llm",
     model,
@@ -254,23 +254,54 @@ function normalizeCalendar(raw, ctx) {
     return fallback;
   };
 
+  const foodIn = raw.food && typeof raw.food === "object" ? raw.food : {};
+  const moviesIn = Array.isArray(raw.movies) ? raw.movies : [];
+
   return {
     date: ctx.date,
+    day: ctx.day,
     weekday: ctx.weekday,
-    daysToWeekend: ctx.daysToWeekend,
-    daysToPayday: ctx.daysToPayday,
+    yearMonth: ctx.yearMonth,
+    ganzhi: ctx.ganzhi,
+    lunar: ctx.lunarText,
+    zodiac: ctx.zodiac,
+    solarTerm: ctx.solarTerm,
+    headerLine: ctx.headerLine,
     holiday: ctx.holiday,
-    title: String(raw.title || "今日宜摸鱼").slice(0, 20),
-    subtitle: String(raw.subtitle || `距离周末还有 ${ctx.daysToWeekend} 天`).slice(0, 40),
-    quote: String(raw.quote || "工作是暂时的，摸鱼是永恒的。").slice(0, 80),
-    mood: String(raw.mood || "平稳").slice(0, 12),
-    suitable: asList(raw.suitable, ["喝水", "站起来", "深呼吸"]),
-    avoid: asList(raw.avoid, ["主动加班", "内耗"]),
-    tips: asList(raw.tips, ["记得眨眼，屏幕不会跑。"]),
+    daysToWeekend: ctx.daysToWeekend,
+    status: String(raw.status || "").slice(0, 220) || mockCalendar(ctx).status,
+    slogan: String(raw.slogan || "今天你摸鱼了吗？").slice(0, 24),
+    bless: String(raw.bless || mockCalendar(ctx).bless).slice(0, 160),
+    suitable: asList(raw.suitable, mockCalendar(ctx).suitable),
+    avoid: asList(raw.avoid, mockCalendar(ctx).avoid),
+    food: {
+      staple: String(foodIn.staple || foodIn["主食"] || "番茄牛腩面").slice(0, 20),
+      snack: String(foodIn.snack || foodIn["小吃"] || "烤红薯").slice(0, 20),
+      soup: String(foodIn.soup || foodIn["汤"] || "玉米排骨汤").slice(0, 20),
+      dessert: String(foodIn.dessert || foodIn["点心"] || "桂花酒酿圆子").slice(0, 20),
+    },
+    movies: normalizeMovies(moviesIn, mockCalendar(ctx).movies),
+    countdowns: ctx.countdowns,
+    paydays: ctx.paydays,
+    paydayMonth: ctx.month,
     generatedAt: raw.generatedAt || new Date().toISOString(),
     source: raw.source || "llm",
     model: raw.model,
   };
+}
+
+function normalizeMovies(list, fallback) {
+  const mapped = list
+    .map((m) => ({
+      title: String(m?.title || "").slice(0, 30),
+      year: Number(m?.year) || null,
+      blurb: String(m?.blurb || m?.desc || "").slice(0, 80),
+    }))
+    .filter((m) => m.title);
+  while (mapped.length < 4 && fallback[mapped.length]) {
+    mapped.push(fallback[mapped.length]);
+  }
+  return mapped.slice(0, 4);
 }
 
 async function loadDotEnv(path) {
