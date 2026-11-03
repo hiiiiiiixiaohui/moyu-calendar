@@ -98,10 +98,24 @@ function formatDate(d) {
 }
 
 function mockCalendar(ctx) {
+  const countdowns = ctx.countdowns.map((item, i) => ({
+    name: item.name,
+    tip:
+      item.days === 0
+        ? "今天就是它，工位请自动隐身。"
+        : i === 0
+          ? `再撑 ${item.days} 天，自由就在日历那一头。`
+          : `还有 ${item.days} 天，先记在心里当燃料。`,
+  }));
+  const paydays = ctx.paydays.map((item) => ({
+    label: item.label,
+    tip: item.days === 0 ? "今天到账？先别提前花光体面。" : `倒计时 ${item.days} 天，钱包先深呼吸。`,
+  }));
+
   return {
     status: ctx.isWeekend
       ? "周末到了，工位已进入休眠模式。手机静音、群聊免打扰，今天的 KPI 只有呼吸和快乐。"
-      : "周一，是打工人集体「灵魂返厂检修」的日子。咖啡续命、眼神放空、鼠标乱点，键盘敲得震天响，文档里只有三个字：待补充。",
+      : "打工人集体「灵魂返厂检修」的一天。咖啡续命、眼神放空、鼠标乱点，键盘敲得震天响，文档里只有三个字：待补充。",
     slogan: "今天你摸鱼了吗？",
     bless: ctx.isWeekend
       ? "寄语：休息不是偷懒的延长线，是下周继续体面摸鱼的燃料。\n今天的目标只有一个——把闹钟设晚一点。"
@@ -128,12 +142,16 @@ function mockCalendar(ctx) {
           "忌下午三点后接新需求，此时大脑已下班",
           "忌把摸鱼记录写进周报，领导会以为你在做副业",
         ],
+    foodTitle: "摸鱼生活 · 今天吃什么",
+    foodNote: "午饭决定下午摸鱼质量，选对口味再开工。",
     food: {
       staple: "番茄牛腩面",
       snack: "烤红薯",
       soup: "玉米排骨汤",
       dessert: "桂花酒酿圆子",
     },
+    moviesTitle: "摸鱼片单 · 4 部",
+    moviesNote: "工位耳机一戴，世界暂时静音。",
     movies: [
       {
         title: "《办公空间》",
@@ -156,6 +174,12 @@ function mockCalendar(ctx) {
         blurb: "提醒你：再忙也别忘了自己为什么出发（以及别接老板凌晨的电话）。",
       },
     ],
+    countdownTitle: "倒计时 · 假期篇",
+    countdownNote: "假期是打工人的北斗星，先数着日子走。",
+    countdowns,
+    paydayTitle: `倒计时 · 薪资篇（本月 ${ctx.month} 月）`,
+    paydayNote: "工资未到账，摸鱼先垫付精神损失费。",
+    paydays,
     generatedAt: new Date().toISOString(),
     source: "mock",
   };
@@ -169,28 +193,55 @@ async function generateWithLlm(ctx) {
   const model = process.env.LLM_MODEL || "gpt-4o-mini";
   const apiKey = process.env.LLM_API_KEY;
 
+  const countdownFacts = ctx.countdowns
+    .map((c) => `- ${c.name}｜还有 ${c.days} 天｜${c.date}`)
+    .join("\n");
+  const paydayFacts = ctx.paydays
+    .map((p) => `- ${p.label}｜还有 ${p.days} 天｜${p.date}`)
+    .join("\n");
+
   const system = `你是「摸鱼人日历」撰稿人。风格对齐经典摸鱼日历：轻松、机智、温暖的打工人幽默，不阴阳怪气伤人，不涉及时政敏感与歧视。
+你必须为页面上的每一个模块都写出当日新鲜文案，禁止只写「今日状态」而把吃什么/片单/倒计时/发薪交给模板或旧稿。
 只输出一个 JSON 对象，不要 markdown 代码块，不要其它说明。字段必须齐全且类型正确：
 {
-  "status": "今日状态，80-120字，像一段工位观察日记",
+  "status": "今日状态，80-120字，像一段工位观察日记，结合日期/季节/节日氛围",
   "slogan": "一句口号，10字以内，可沿用「今天你摸鱼了吗？」或自创新句",
   "bless": "寄语两行，用 \\n 换行，每行一句，带一点安慰和笑点",
   "suitable": ["宜……（完整一句，15-28字）", "宜……", "宜……"],
   "avoid": ["忌……（完整一句，15-28字）", "忌……", "忌……"],
+  "foodTitle": "摸鱼生活 · 今天吃什么（可微调，仍像栏目名）",
+  "foodNote": "一句午饭导语，18-32字",
   "food": {
-    "staple": "主食名",
+    "staple": "主食名（今日原创，贴合季节）",
     "snack": "小吃名",
     "soup": "汤名",
     "dessert": "点心名"
   },
+  "moviesTitle": "摸鱼片单 · 4 部（可微调）",
+  "moviesNote": "一句片单导语，18-32字",
   "movies": [
     { "title": "《影片名》", "year": 1999, "blurb": "一句话安利，20-40字" },
     { "title": "《影片名》", "year": 2013, "blurb": "……" },
     { "title": "《影片名》", "year": 2015, "blurb": "……" },
     { "title": "《影片名》", "year": 2006, "blurb": "……" }
+  ],
+  "countdownTitle": "倒计时 · 假期篇（可微调）",
+  "countdownNote": "一句假期倒计时导语，18-32字",
+  "countdowns": [
+    { "name": "必须与下方事实清单中的名称完全一致", "tip": "针对该节日/周末的摸鱼吐槽，12-24字" }
+  ],
+  "paydayTitle": "倒计时 · 薪资篇（可微调，可带月份）",
+  "paydayNote": "一句发薪导语，18-32字",
+  "paydays": [
+    { "label": "必须与下方事实清单中的标签完全一致", "tip": "针对该发薪日的短评，10-20字" }
   ]
 }
-要求：suitable/avoid 各 3 条；movies 必须 4 部，偏职场/松弛/喜剧；food 贴合季节与午饭场景。`;
+硬性要求：
+1. suitable/avoid 各 3 条，必须写「宜」「忌」开头。
+2. movies 必须 4 部，题材可职场/松弛/喜剧/治愈，但每天尽量换片，不要总是同一四部老片。
+3. food 必须像「今天午饭菜单」，贴合季节与天气联想，不要永远番茄牛腩面。
+4. countdowns / paydays 必须覆盖事实清单里的每一项，name/label 一字不差；只写 tip，不要改 days/date。
+5. 所有模块标题与导语都要当日感，禁止复制粘贴空泛口号。`;
 
   const user = `日期：${ctx.date}（${ctx.weekday}）
 是否周末：${ctx.isWeekend ? "是" : "否"}
@@ -199,7 +250,15 @@ ${ctx.headerLine || ""}
 固定节日：${ctx.holiday || "无"}
 距离周末：${ctx.daysToWeekend} 天（${ctx.weekendDate}）
 下一节气：${ctx.solarTerm ? `${ctx.solarTerm.name}还有 ${ctx.solarTerm.days} 天` : "无"}
-请写一份完整的当日摸鱼人日历文案（状态/口号寄语/宜忌/吃什么/片单）。倒计时与发薪由系统计算，你不必输出。`;
+本月：${ctx.month} 月
+
+【假期倒计时事实清单——请为每一项写 tip】
+${countdownFacts}
+
+【发薪倒计时事实清单——请为每一项写 tip】
+${paydayFacts}
+
+请输出完整摸鱼人日历 JSON：状态、口号寄语、宜忌、吃什么、片单、假期倒计时、薪资倒计时，全部模块都要有当日动态文案。`;
 
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
@@ -249,13 +308,16 @@ function stripCodeFence(text) {
 }
 
 function normalizeCalendar(raw, ctx) {
-  const asList = (v, fallback) => {
+  const fallback = mockCalendar(ctx);
+  const asList = (v, fb) => {
     if (Array.isArray(v) && v.length) return v.map(String).slice(0, 6);
-    return fallback;
+    return fb;
   };
 
   const foodIn = raw.food && typeof raw.food === "object" ? raw.food : {};
   const moviesIn = Array.isArray(raw.movies) ? raw.movies : [];
+  const tipByName = tipMap(raw.countdowns, "name");
+  const tipByLabel = tipMap(raw.paydays, "label");
 
   return {
     date: ctx.date,
@@ -269,25 +331,56 @@ function normalizeCalendar(raw, ctx) {
     headerLine: ctx.headerLine,
     holiday: ctx.holiday,
     daysToWeekend: ctx.daysToWeekend,
-    status: String(raw.status || "").slice(0, 220) || mockCalendar(ctx).status,
+    status: String(raw.status || "").slice(0, 220) || fallback.status,
     slogan: String(raw.slogan || "今天你摸鱼了吗？").slice(0, 24),
-    bless: String(raw.bless || mockCalendar(ctx).bless).slice(0, 160),
-    suitable: asList(raw.suitable, mockCalendar(ctx).suitable),
-    avoid: asList(raw.avoid, mockCalendar(ctx).avoid),
+    bless: String(raw.bless || fallback.bless).slice(0, 160),
+    suitable: asList(raw.suitable, fallback.suitable),
+    avoid: asList(raw.avoid, fallback.avoid),
+    foodTitle: String(raw.foodTitle || fallback.foodTitle).slice(0, 32),
+    foodNote: String(raw.foodNote || fallback.foodNote).slice(0, 48),
     food: {
-      staple: String(foodIn.staple || foodIn["主食"] || "番茄牛腩面").slice(0, 20),
-      snack: String(foodIn.snack || foodIn["小吃"] || "烤红薯").slice(0, 20),
-      soup: String(foodIn.soup || foodIn["汤"] || "玉米排骨汤").slice(0, 20),
-      dessert: String(foodIn.dessert || foodIn["点心"] || "桂花酒酿圆子").slice(0, 20),
+      staple: String(foodIn.staple || foodIn["主食"] || fallback.food.staple).slice(0, 20),
+      snack: String(foodIn.snack || foodIn["小吃"] || fallback.food.snack).slice(0, 20),
+      soup: String(foodIn.soup || foodIn["汤"] || fallback.food.soup).slice(0, 20),
+      dessert: String(foodIn.dessert || foodIn["点心"] || fallback.food.dessert).slice(0, 20),
     },
-    movies: normalizeMovies(moviesIn, mockCalendar(ctx).movies),
-    countdowns: ctx.countdowns,
-    paydays: ctx.paydays,
+    moviesTitle: String(raw.moviesTitle || fallback.moviesTitle).slice(0, 32),
+    moviesNote: String(raw.moviesNote || fallback.moviesNote).slice(0, 48),
+    movies: normalizeMovies(moviesIn, fallback.movies),
+    countdownTitle: String(raw.countdownTitle || fallback.countdownTitle).slice(0, 36),
+    countdownNote: String(raw.countdownNote || fallback.countdownNote).slice(0, 48),
+    countdowns: ctx.countdowns.map((item, i) => ({
+      ...item,
+      tip: String(
+        tipByName.get(item.name) || fallback.countdowns[i]?.tip || "",
+      ).slice(0, 40),
+    })),
+    paydayTitle: String(
+      raw.paydayTitle || fallback.paydayTitle || `倒计时 · 薪资篇（本月 ${ctx.month} 月）`,
+    ).slice(0, 40),
+    paydayNote: String(raw.paydayNote || fallback.paydayNote).slice(0, 48),
+    paydays: ctx.paydays.map((item, i) => ({
+      ...item,
+      tip: String(
+        tipByLabel.get(item.label) || fallback.paydays[i]?.tip || "",
+      ).slice(0, 36),
+    })),
     paydayMonth: ctx.month,
     generatedAt: raw.generatedAt || new Date().toISOString(),
     source: raw.source || "llm",
     model: raw.model,
   };
+}
+
+function tipMap(list, key) {
+  const map = new Map();
+  if (!Array.isArray(list)) return map;
+  for (const item of list) {
+    const k = String(item?.[key] || "").trim();
+    const tip = String(item?.tip || item?.blurb || item?.note || "").trim();
+    if (k && tip) map.set(k, tip);
+  }
+  return map;
 }
 
 function normalizeMovies(list, fallback) {

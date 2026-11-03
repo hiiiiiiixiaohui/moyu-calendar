@@ -86,13 +86,43 @@ function render(data) {
 
   fillList($("suitable"), data.suitable);
   fillList($("avoid"), data.avoid);
+
+  setBlockMeta("foodTitle", "foodNote", data.foodTitle, data.foodNote, "摸鱼生活 · 今天吃什么");
   renderFood(data.food);
+
+  setBlockMeta("moviesTitle", "moviesNote", data.moviesTitle, data.moviesNote, "摸鱼片单 · 4 部");
   renderMovies(data.movies);
+
+  setBlockMeta(
+    "countdownTitle",
+    "countdownNote",
+    data.countdownTitle,
+    data.countdownNote,
+    "倒计时 · 假期篇",
+  );
   renderCountdowns(data.countdowns);
-  renderPaydays(data.paydays, data.paydayMonth);
+
+  const paydayFallback = data.paydayMonth
+    ? `倒计时 · 薪资篇（本月 ${data.paydayMonth} 月）`
+    : "倒计时 · 薪资篇";
+  setBlockMeta("paydayTitle", "paydayNote", data.paydayTitle, data.paydayNote, paydayFallback);
+  renderPaydays(data.paydays);
 
   const src = data.source === "mock" ? "本地样例" : data.model || "llm";
   $("source").textContent = `生成于 ${formatTime(data.generatedAt)} · ${src}`;
+}
+
+function setBlockMeta(titleId, noteId, title, note, fallbackTitle) {
+  $(titleId).textContent = title || fallbackTitle;
+  const noteEl = $(noteId);
+  const text = String(note || "").trim();
+  if (text) {
+    noteEl.hidden = false;
+    noteEl.textContent = text;
+  } else {
+    noteEl.hidden = true;
+    noteEl.textContent = "";
+  }
 }
 
 function fillList(ul, items) {
@@ -148,6 +178,7 @@ function renderCountdowns(items = []) {
       <div class="cd-name"></div>
       <div class="cd-num"></div>
       <div class="cd-date"></div>
+      <div class="cd-tip" hidden></div>
     `;
     div.querySelector(".cd-name").textContent = item.name;
     const num = div.querySelector(".cd-num");
@@ -161,20 +192,23 @@ function renderCountdowns(items = []) {
       num.appendChild(span);
     }
     div.querySelector(".cd-date").textContent = item.date || "";
+    const tipEl = div.querySelector(".cd-tip");
+    const tip = String(item.tip || "").trim();
+    if (tip) {
+      tipEl.hidden = false;
+      tipEl.textContent = tip;
+    }
     root.appendChild(div);
   }
 }
 
-function renderPaydays(items = [], month) {
-  $("paydayTitle").textContent = month
-    ? `倒计时 · 薪资篇（本月 ${month} 月）`
-    : "倒计时 · 薪资篇";
+function renderPaydays(items = []) {
   const root = $("paydays");
   root.replaceChildren();
   for (const item of items) {
     const div = document.createElement("div");
     div.className = "pay-item";
-    div.innerHTML = `<div class="pay-p"></div><div class="pay-d"></div>`;
+    div.innerHTML = `<div class="pay-p"></div><div class="pay-d"></div><div class="pay-tip" hidden></div>`;
     div.querySelector(".pay-p").textContent = item.label;
     const d = div.querySelector(".pay-d");
     if (item.days === 0) {
@@ -185,6 +219,12 @@ function renderPaydays(items = [], month) {
       const span = document.createElement("span");
       span.textContent = " 天";
       d.appendChild(span);
+    }
+    const tipEl = div.querySelector(".pay-tip");
+    const tip = String(item.tip || "").trim();
+    if (tip) {
+      tipEl.hidden = false;
+      tipEl.textContent = tip;
     }
     root.appendChild(div);
   }

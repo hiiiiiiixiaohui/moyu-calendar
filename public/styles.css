@@ -269,6 +269,21 @@ body {
   margin-top: 1.4rem;
 }
 
+.block-note {
+  margin: -0.35rem 0 0.85rem;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.cd-tip,
+.pay-tip {
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #9aabbf;
+}
+
 .status {
   margin: 0;
   font-size: 1.02rem;
