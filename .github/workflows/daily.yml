@@ -2,8 +2,9 @@ name: Daily Moyu Calendar
 
 on:
   schedule:
-    # 每天 01:00 UTC = 北京时间 09:00（避开 UTC 午夜拥堵，减少延迟）
-    - cron: "0 1 * * *"
+    # 目标是北京时间 07:00 左右。GitHub schedule 近期稳定晚约 6 小时，
+    # 因此设在 17:00 UTC（北京时间 01:00），实际多在次日北京时间 07:00 前后启动。
+    - cron: "0 17 * * *"
   workflow_dispatch:
 
 permissions:
